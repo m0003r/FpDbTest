@@ -116,7 +116,7 @@ class DFADatabase implements DatabaseInterface
             case '#':
                 goto field_arg;
             default:
-                $r++;
+                $i--;
                 goto unspecified_arg;
         }
 

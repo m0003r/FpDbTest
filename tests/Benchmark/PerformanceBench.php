@@ -2,6 +2,7 @@
 
 namespace Benchmark;
 
+use FpDbTest\DatabaseInterface;
 use FpDbTest\DFADatabase;
 use FpDbTest\RegExpDatabase;
 use FpDbTest\Tests\MysqliFactory;
@@ -10,37 +11,33 @@ use PhpBench\Attributes as Bench;
 use FpDbTest\Tests\AbstractDatabaseTestCase;
 
 #[Bench\BeforeMethods('setUp')]
+#[Bench\Revs(100)]
+#[Bench\Iterations(20)]
+#[Bench\RetryThreshold(10)]
+#[Bench\Warmup(10)]
 class PerformanceBench
 {
-    private DFADatabase $dfa;
-    private RegExpDatabase $regExp;
+    private DatabaseInterface $db;
 
     public function setUp()
     {
         $mysqli = MysqliFactory::createMysqli();
-        $this->dfa = new DFADatabase($mysqli);
-        $this->regExp = new RegExpDatabase($mysqli);
+        $this->db = getenv('DFA_ENABLED') ? new DFADatabase($mysqli) : new RegExpDatabase($mysqli);
     }
 
-    public function getQuerySamples()
-    {
-        yield from AbstractDatabaseTestCase::originalTests();
+    public function benchNoParams() {
+        $this->db->buildQuery('SELECT * FROM table WHERE id = 1 AND name = \'test\'', []);
     }
 
-
-    #[Bench\ParamProviders(['getQuerySamples'])]
-    #[Bench\Revs(1000)]
-    #[Bench\Iterations(10)]
-    public function benchRegExpDatabase(array $params)
-    {
-        $this->regExp->buildQuery($params[0], $params[1]);
+    public function benchWithParams() {
+        $this->db->buildQuery('SELECT * FROM table WHERE id = ?d AND name = ?', [1, 'test']);
     }
 
-    #[Bench\ParamProviders(['getQuerySamples'])]
-    #[Bench\Revs(1000)]
-    #[Bench\Iterations(10)]
-    public function benchDFADatabase(array $params)
-    {
-        $this->dfa->buildQuery($params[0], $params[1]);
+    public function benchWithCondition() {
+        $this->db->buildQuery('SELECT * FROM table WHERE id = ?d AND name = ?{ AND block = ?d}', [1, 'test', 1]);
+    }
+
+    public function benchWithSkipCondition() {
+        $this->db->buildQuery('SELECT * FROM table WHERE id = ?d AND name = ?{ AND block = ?d}', [1, 'test', $this->db->skip()]);
     }
 }

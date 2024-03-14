@@ -26,6 +26,11 @@ echo
 vendor/bin/infection
 
 echo; echo; echo
-echo -e "\e[1;33m **** RUNNING BENCHMARKS **** \e[0m"
+echo -e "\e[1;33m **** RUNNING BENCHMARKS (RegExp) **** \e[0m"
 echo
-vendor/bin/phpbench run --report=aggregate
+vendor/bin/phpbench run --report=aggregate --tag=regexp
+
+echo; echo; echo
+echo -e "\e[1;33m **** RUNNING BENCHMARKS (DFA) **** \e[0m"
+echo
+DFA_ENABLED=1 vendor/bin/phpbench run --report=aggregate --ref=regexp

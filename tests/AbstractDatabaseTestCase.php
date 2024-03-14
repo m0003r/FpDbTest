@@ -366,6 +366,19 @@ abstract class AbstractDatabaseTestCase extends TestCase
             ' name = NULL '
         ];
 
+        yield 'Simple conditional with several params' => [
+            'SELECT * FROM table WHERE id = ?d AND name = ?{ AND block = ?d}',
+            [1, 'test', self::SKIP],
+            'SELECT * FROM table WHERE id = 1 AND name = \'test\''
+        ];
+
+        yield 'Simple conditional with several params (with value)' => [
+            'SELECT * FROM table WHERE id = ?d AND name = ?{ AND block = ?d}',
+            [1, 'test', 1],
+            'SELECT * FROM table WHERE id = 1 AND name = \'test\' AND block = 1'
+        ];
+
+
         /// endregion
 
         /// region conditional test with multiple values
