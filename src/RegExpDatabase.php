@@ -3,6 +3,7 @@
 namespace FpDbTest;
 
 use mysqli;
+use PHPUnit\Logging\Exception;
 
 class RegExpDatabase implements DatabaseInterface
 {
@@ -18,41 +19,81 @@ class RegExpDatabase implements DatabaseInterface
 
     public function buildQuery(string $query, array $args = []): string
     {
-        $index = 0;
+        $argIndex = 0;
         $argCount = count($args);
-        $formattedQuery = preg_replace_callback('/\?([dfa#])?/', function ($matches) use (&$index, $args, $argCount) {
-            if ($index >= $argCount) {
+        $insideConditional = false;
+        $renderConditional = true;
+
+        $parts = preg_split('/(\?[dfa#]?)|([\\{}])/', $query, flags: PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+
+        $output = [];
+        $conditionalOutput = [];
+        $currentOutput = &$output;
+
+        foreach ($parts as $part) {
+            if ($part === '{') {
+                if ($insideConditional) {
+                    throw new Exception("Unmatched open brace");
+                }
+                $insideConditional = true;
+                $currentOutput = &$conditionalOutput;
+                $renderConditional = true;
+                continue;
+            }
+            if ($part === '}') {
+                if (!$insideConditional) {
+                    throw new Exception("Unmatched close brace");
+                }
+                $insideConditional = false;
+                $currentOutput = &$output;
+                $output[] = $renderConditional ? implode('', $conditionalOutput) : '';
+                $conditionalOutput = [];
+                continue;
+            }
+
+            if ($part[0] !== '?') {
+                $currentOutput[] = $part;
+                continue;
+            }
+
+            if ($argIndex >= $argCount) {
                 throw new \Exception('Missing argument for placeholder');
             }
 
-            $value = $args[$index++];
+            $value = $args[$argIndex++];
             if ($value === $this->skip) {
-                return '?'; // should never be in formatted query, so it's safe to use it
+                $renderConditional = false;
+                continue;
             }
-            $type = $matches[1] ?? null;
+            $type = $part[1] ?? null;
 
             if ($value === null) {
                 if ($type === 'a' || $type === '#') {
                     throw new \Exception('Array and field types cannot be null');
                 }
-                return 'NULL';
+                $currentOutput[] = 'NULL';
+                continue;
             }
 
             switch ($type) {
                 case 'd':
-                    return (int)$value;
+                    $currentOutput[] = (int)$value;
+                    break;
                 case 'f':
-                    return (float)$value;
+                    $currentOutput[] = (float)$value;
+                    break;
                 case '#':
-                    return '`' . implode('`, `',
+                    $currentOutput[] = '`' . implode('`, `',
                             array_map(static fn($x) => is_string($x) ?
                                 $x : throw new \Exception('Field name must be a string'),
                                 (array)$value)) . '`';
+                    break;
                 case 'a':
                     if (!is_array($value)) {
                         throw new \Exception('Array argument must have a type ?a');
                     }
-                    return $this->formatValue($value);
+                    $currentOutput[] = $this->formatValue($value);
+                    break;
                 /** @noinspection PhpMissingBreakStatementInspection */
                 case null:
                     if (is_array($value)) {
@@ -60,28 +101,19 @@ class RegExpDatabase implements DatabaseInterface
                     }
                 // дальше идёт обработка как для ?, break не нужен
                 default:
-                    return $this->formatValue($value);
+                    $currentOutput[] = $this->formatValue($value);
             }
-        }, $query);
-
-        // Handle conditional blocks
-        $formattedQuery = preg_replace_callback('/\{(.*?)}/', function ($matches) {
-            if (str_contains($matches[1], '?')) {
-                return '';
-            }
-            return $matches[1];
-        }, $formattedQuery);
-
-        // check if there is no unmatched placeholders
-        if (preg_match('/[?{}]/', $formattedQuery)) {
-            throw new \Exception('Unmatched placeholders and/or braces');
         }
 
-        if ($index < $argCount) {
+        if ($insideConditional) {
+            throw new \Exception("Unmatched open brace");
+        }
+
+        if ($argIndex < $argCount) {
             throw new \Exception('Too many arguments for placeholders');
         }
 
-        return $formattedQuery;
+        return implode('', $output);
     }
 
     private function formatValue($value): string

@@ -126,6 +126,20 @@ abstract class AbstractDatabaseTestCase extends TestCase
         ];
         ///endregion
 
+        /// region complicated strings
+        yield 'String with question mark' => [
+            '?',
+            ['?'],
+            '\'?\''
+        ];
+
+        yield 'String with brace' => [
+            '?',
+            ['{'],
+            '\'{\''
+        ];
+        /// endregion
+
         /// region cast to int
         yield 'Cast int' => [
             '?d',
@@ -377,8 +391,6 @@ abstract class AbstractDatabaseTestCase extends TestCase
             [1, 'test', 1],
             'SELECT * FROM table WHERE id = 1 AND name = \'test\' AND block = 1'
         ];
-
-
         /// endregion
 
         /// region conditional test with multiple values
