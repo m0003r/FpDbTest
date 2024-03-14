@@ -5,7 +5,7 @@ namespace FpDbTest;
 use Exception;
 use mysqli;
 
-class Database implements DatabaseInterface
+class DFADatabase implements DatabaseInterface
 {
     private object $skipValue;
 
@@ -39,7 +39,7 @@ class Database implements DatabaseInterface
 
         next:
         $i++;
-        if ($i === $queryLength) {
+        if ($i >= $queryLength) {
             goto end;
         }
 
@@ -121,6 +121,9 @@ class Database implements DatabaseInterface
         }
 
         unspecified_arg:
+        if (is_array($arg)) {
+            throw new Exception('Argument for ? at position ' . $i . ' is an array, but no ?a was specified');
+        }
 
         $currentOutput[] = $this->formatArg($arg);
 
@@ -132,13 +135,7 @@ class Database implements DatabaseInterface
             goto next;
         }
 
-        if (is_bool($arg)) {
-            $arg = $arg ? 1 : 0;
-        }
-        if (!is_int($arg)) {
-            throw new Exception('Argument for ?d at position ' . $i . ' is not an integer');
-        }
-        $currentOutput[] = (string)$arg;
+        $currentOutput[] = (int)$arg;
         goto next;
 
         float_arg:
@@ -147,10 +144,7 @@ class Database implements DatabaseInterface
             goto next;
         }
 
-        if (!is_float($arg)) {
-            throw new Exception('Argument for ?f at position ' . $i . ' is not a float');
-        }
-        $currentOutput[] = (string)$arg;
+        $currentOutput[] = (float)$arg;
         goto next;
 
         array_arg:
@@ -180,13 +174,20 @@ class Database implements DatabaseInterface
         goto next;
 
         end:
+        if ($insideConditional) {
+            throw new Exception('Unmatched {');
+        }
+        if ($currentArg < $totalArgs) {
+            throw new Exception('Too many arguments');
+        }
         if ($r > 0) {
             $outputParts[] = substr($query, $i - $r, $r);
         }
         return implode('', $outputParts);
-}
+    }
 
-    private function formatArg(string|int|float|bool|null|array $arg): string {
+    private function formatArg(string|int|float|bool|null|array $arg): string
+    {
         if (is_int($arg) || is_float($arg)) {
             return (string)$arg;
         }
@@ -202,12 +203,19 @@ class Database implements DatabaseInterface
         if (array_is_list($arg)) {
             $buffer = [];
             foreach ($arg as $item) {
+                if ($item === $this->skipValue) {
+                    throw new Exception('Array values cannot be skip()');
+                }
+
                 $buffer[] = $this->formatArg($item);
             }
             return implode(', ', $buffer);
         }
         $buffer = [];
         foreach ($arg as $key => $value) {
+            if ($value === $this->skipValue) {
+                throw new Exception('Array values cannot be skip()');
+            }
             $buffer[] = "`$key` = " . $this->formatArg($value);
         }
         return implode(', ', $buffer);

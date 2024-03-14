@@ -1,0 +1,28 @@
+{
+  "$schema": "vendor/infection/infection/resources/schema.json",
+  "source": {
+    "directories": [
+      "./src",
+    ]
+  },
+  "mutators": {
+    "@default": true,
+    // изменения в сообщениях исключений мутациями не считать,
+    "Concat": {
+      "ignoreSourceCodeByRegex": [
+        "throw new \\\\?Exception\\(.*"
+      ],
+    },
+    "ConcatOperandRemoval": {
+      "ignoreSourceCodeByRegex": [
+        "throw new \\\\?Exception\\(.*"
+      ],
+    },
+    // это изменение ничего не меняет, кроме лишнего вызова substr с нулевой длиной
+    "GreaterThan": {
+      "ignoreSourceCodeByRegex": [
+        "if \\(\\$r > 0\\).*"
+      ]
+    },
+  }
+}

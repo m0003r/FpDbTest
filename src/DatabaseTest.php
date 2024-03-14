@@ -54,15 +54,4 @@ class DatabaseTest
             throw new Exception('Failure.');
         }
     }
-
-    // benchmark
-    public function testBuildQueryBenchmark(): void
-    {
-        $start = microtime(true);
-        for ($i = 0; $i < 100000; $i++) {
-            $this->db->buildQuery('SELECT * FROM users WHERE name = ? AND block = 0', ['Jack']);
-        }
-        $end = microtime(true);
-        echo 'Time: ' . ($end - $start) . "\n";
-    }
 }

@@ -1,26 +1,22 @@
 version: '3'
 services:
-  ci-test:
+  tests:
     # use docker from src
-    build: ./src
+    build: ./docker
     volumes:
-      - ./src:/app
+      - .:/app
     depends_on:
       db:
         condition: service_healthy
-    command: ['php', '/app/test.php']
+    command: ['/app/docker-entrypoint.sh']
   db:
     image: mariadb:11
     environment:
       MARIADB_ROOT_PASSWORD: password
       MARIADB_DATABASE: database
-    volumes:
-      - ./db_data:/var/lib/mysql
     ports:
       - 3306:3306
     healthcheck:
       test: [ "CMD", "mariadb-admin" ,"ping", "-h", "127.0.0.1", "-uroot", "-p$$MARIADB_ROOT_PASSWORD" ]
       timeout: 2s
       retries: 10
-volumes:
-  db_data: {}
