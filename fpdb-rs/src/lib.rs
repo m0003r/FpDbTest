@@ -1,12 +1,10 @@
-use ext_php_rs::convert::IntoZvalDyn;
 use ext_php_rs::prelude::*;
-use ext_php_rs::types::{ArrayKey, ZendHashTable};
 use ext_php_rs::{
     binary::Binary,
-    binary_slice::BinarySlice,
     boxed::ZBox,
+    convert::IntoZval,
     flags::DataType,
-    types::{ZendClassObject, ZendObject, Zval},
+    types::{ArrayKey, ZendHashTable, ZendClassObject, ZendObject, Zval},
 };
 use memchr::memchr3_iter;
 
@@ -56,7 +54,9 @@ impl RustDFA {
     }
 
     #[php_method]
-    pub fn build_query(&self, query: BinarySlice<u8>, args: &Zval) -> Result<Binary<u8>, String> {
+    pub fn build_query(&self, query_zval: &Zval, args: &Zval) -> Result<Zval, String> {
+        let query = query_zval.zend_str().ok_or("Expected string")?.as_bytes();
+
         let args = args.array().ok_or("Expected liat")?;
         if !array_is_list_fast(&args) {
             return Err("Expected list".to_string());
@@ -160,11 +160,15 @@ impl RustDFA {
             return Err("Too many arguments".to_string());
         }
 
+        // do not copy string if there is no arguments
+        if r == 0 {
+            return Ok(query_zval.shallow_clone());
+        }
         if r < query.len() {
             current_output.extend_from_slice(&query[r..]);
         }
 
-        Ok(Binary::from(output))
+        Binary::from(output).into_zval(false).map_err(|_| "Failed to convert to zval".to_string())
     }
 
     fn format_integer(&self, arg: &Zval) -> Result<Vec<u8>, String> {
