@@ -33,7 +33,7 @@ vendor/bin/phpbench run --report=aggregate --tag=regexp
 echo; echo; echo
 echo -e "\e[1;33m **** RUNNING BENCHMARKS (DFA) **** \e[0m"
 echo
-DFA_ENABLED=1 vendor/bin/phpbench run --report=aggregate --ref=regexp
+DB_TYPE=DFA vendor/bin/phpbench run --report=aggregate --ref=regexp
 
 echo; echo; echo
 echo -e "\e[1;33m **** RUNNING BENCHMARKS (10k revs, RegExp) **** \e[0m"
@@ -43,4 +43,4 @@ vendor/bin/phpbench run --report=aggregate --tag=regexp_10k
 echo; echo; echo
 echo -e "\e[1;33m **** RUNNING BENCHMARKS (10k revs, DFA) **** \e[0m"
 echo
-DFA_ENABLED=1 vendor/bin/phpbench run --report=aggregate --ref=regexp_10k
+DB_TYPE=DFA vendor/bin/phpbench run --report=aggregate --ref=regexp_10k

@@ -5,6 +5,7 @@ namespace Benchmark;
 use FpDbTest\DatabaseInterface;
 use FpDbTest\DFADatabase;
 use FpDbTest\RegExpDatabase;
+use FpDbTest\RustDFADatabase;
 use FpDbTest\Tests\MysqliFactory;
 use PhpBench\Attributes as Bench;
 
@@ -22,7 +23,11 @@ class PerformanceBench
     public function setUp()
     {
         $mysqli = MysqliFactory::createMysqli();
-        $this->db = getenv('DFA_ENABLED') ? new DFADatabase($mysqli) : new RegExpDatabase($mysqli);
+        $this->db = match (getenv('DB_TYPE')) {
+            'DFA' => new DFADatabase($mysqli),
+            'RustDFA' => new RustDFADatabase($mysqli),
+            default => new RegExpDatabase($mysqli),
+        };;
     }
 
     public function benchNoParams() {

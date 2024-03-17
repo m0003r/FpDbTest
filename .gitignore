@@ -2,3 +2,4 @@
 vendor
 .phpunit.cache
 .phpbench
+fpdb-rs/target

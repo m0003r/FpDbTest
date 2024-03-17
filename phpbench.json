@@ -1,13 +1,20 @@
 {
-  "$schema":"./vendor/phpbench/phpbench/phpbench.schema.json",
+  "$schema": "./vendor/phpbench/phpbench/phpbench.schema.json",
   "runner.bootstrap": "vendor/autoload.php",
   "runner.path": "tests/Benchmark",
-  "runner.env_enabled_providers": ["sampler","opcache","php","uname","unix_sysload"],
+  "runner.env_enabled_providers": [
+    "sampler",
+    "opcache",
+    "php",
+    "uname",
+    "unix_sysload"
+  ],
   "runner.php_config": {
     "pcov.enabled": 0,
     "opcache.enable": 1,
     "opcache.enable_cli": 1,
     "opcache.jit": "function",
-    "opcache.jit_buffer_size": "512M"
+    "opcache.jit_buffer_size": "512M",
+    "extension": "/app/fpdb-rs/target/release/libfpdb_rs.so"
   }
 }
