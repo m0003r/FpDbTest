@@ -14,7 +14,6 @@
     "opcache.enable": 1,
     "opcache.enable_cli": 1,
     "opcache.jit": "function",
-    "opcache.jit_buffer_size": "512M",
-    "extension": "/app/fpdb-rs/target/release/libfpdb_rs.so"
+    "opcache.jit_buffer_size": "512M"
   }
 }

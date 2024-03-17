@@ -1,5 +1,3 @@
-# write dockerfile for building php extensions with ext-php-rs
-
 FROM php:8.3-cli
 
 # Install rustup

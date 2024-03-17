@@ -36,11 +36,6 @@ echo
 DB_TYPE=DFA vendor/bin/phpbench run --report=aggregate --ref=regexp
 
 echo; echo; echo
-echo -e "\e[1;33m **** RUNNING BENCHMARKS (10k revs, RegExp) **** \e[0m"
+echo -e "\e[1;33m **** RUNNING BENCHMARKS (Rust DFA) **** \e[0m"
 echo
-vendor/bin/phpbench run --report=aggregate --tag=regexp_10k
-
-echo; echo; echo
-echo -e "\e[1;33m **** RUNNING BENCHMARKS (10k revs, DFA) **** \e[0m"
-echo
-DB_TYPE=DFA vendor/bin/phpbench run --report=aggregate --ref=regexp_10k
+DB_TYPE=RustDFA vendor/bin/phpbench run --report=aggregate --ref=regexp

@@ -12,7 +12,7 @@ use PhpBench\Attributes as Bench;
 use FpDbTest\Tests\AbstractDatabaseTestCase;
 
 #[Bench\BeforeMethods('setUp')]
-#[Bench\Revs(100)]
+#[Bench\Revs(100000)]
 #[Bench\Iterations(20)]
 #[Bench\RetryThreshold(10)]
 #[Bench\Warmup(10)]
