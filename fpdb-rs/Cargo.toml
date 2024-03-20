@@ -11,4 +11,4 @@ ext-php-rs = "*"
 memchr = "2.7.1"
 
 [profile.release]
-# strip = "debuginfo"
+strip = "debuginfo"

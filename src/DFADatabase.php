@@ -180,6 +180,10 @@ class DFADatabase implements DatabaseInterface
         if ($currentArg < $totalArgs) {
             throw new Exception('Too many arguments');
         }
+        if ($r === $i) {
+            // аргументов не было, избегаем лишнего копирования строки
+            return $query;
+        }
         if ($r > 0) {
             $outputParts[] = substr($query, $i - $r, $r);
         }
