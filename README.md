@@ -24,7 +24,7 @@
 Для удобства тестирования всё запаковано в docker-compose (поскольку для тестов требуется живая БД; выбрана MariaDB 11). Запускать тесты так:
 
 ```bash
-docker compose run tests
+docker compose build && docker compose run tests
 # остановить БД
 docker compose down
 ```
