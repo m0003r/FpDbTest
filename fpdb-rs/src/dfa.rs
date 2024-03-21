@@ -1,3 +1,4 @@
+use std::borrow::{Cow, ToOwned};
 use ext_php_rs::boxed::ZBox;
 use ext_php_rs::types::{ArrayKey, ZendHashTable, ZendObject, Zval};
 use ext_php_rs::binary::Binary;
@@ -5,7 +6,17 @@ use ext_php_rs::flags::DataType;
 use ext_php_rs::convert::IntoZval;
 
 use memchr::memchr3_iter;
+
+use lazy_static::lazy_static;
+
 use crate::zend_casts;
+
+lazy_static! {
+    static ref NULL_STRING: Cow<'static, [u8]> = Cow::Owned(b"NULL".into());
+    static ref ONE_STRING: Cow<'static, [u8]> = Cow::Owned(b"1".into());
+    static ref ZERO_STRING: Cow<'static, [u8]> = Cow::Owned(b"0".into());
+}
+
 
 /// Быстрая проверка, что массив является списком
 ///
@@ -171,9 +182,9 @@ impl QueryParser {
         Binary::from(output).into_zval(false).map_err(|_| "Failed to convert string to zval".to_string())
     }
 
-    fn format_integer(&self, arg: &Zval) -> Result<Vec<u8>, String> {
+    fn format_integer<'a>(&'_ self, arg: &'a Zval) -> Result<Cow<'a, [u8]>, String> {
         if arg.get_type() == DataType::Null {
-            return Ok(b"NULL".to_vec());
+            return Ok(NULL_STRING.clone());
         }
 
         zend_casts::as_long_as_string(arg);
@@ -182,12 +193,13 @@ impl QueryParser {
             .zend_str()
             .ok_or("Expected string")?
             .as_bytes()
-            .to_owned())
+            .as_ref()
+            .into())
     }
 
-    fn format_float(&self, arg: &Zval) -> Result<Vec<u8>, String> {
+    fn format_float<'a>(&'_ self, arg: &'a Zval) -> Result<Cow<'a, [u8]>, String> {
         if arg.get_type() == DataType::Null {
-            return Ok(b"NULL".to_vec());
+            return Ok(NULL_STRING.clone());
         }
 
         zend_casts::as_float_as_string(arg);
@@ -196,10 +208,11 @@ impl QueryParser {
             .zend_str()
             .ok_or("Expected string")?
             .as_bytes()
-            .to_owned())
+            .as_ref()
+            .into())
     }
 
-    fn format_ht(&self, arg: &Zval) -> Result<Vec<u8>, String> {
+    fn format_ht(&self, arg: &Zval) -> Result<Cow<[u8]>, String> {
         let ht = arg.array().ok_or("Expected array")?;
         if array_is_list_fast(ht) {
             self.format_list(ht)
@@ -208,7 +221,7 @@ impl QueryParser {
         }
     }
 
-    fn format_list(&self, ht: &ZendHashTable) -> Result<Vec<u8>, String> {
+    fn format_list(&self, ht: &ZendHashTable) -> Result<Cow<[u8]>, String> {
         let mut output = Vec::with_capacity(ht.len() * 3);
         let mut first = true;
         for (_, value) in ht.iter() {
@@ -227,10 +240,10 @@ impl QueryParser {
             let value = self.format_unspecified(value)?;
             output.extend_from_slice(&value);
         }
-        Ok(output)
+        Ok(output.into())
     }
 
-    fn format_assoc(&self, ht: &ZendHashTable) -> Result<Vec<u8>, String> {
+    fn format_assoc(&self, ht: &ZendHashTable) -> Result<Cow<[u8]>, String> {
         let mut output = Vec::with_capacity(ht.len() * 8);
         output.extend_from_slice(b"`");
         let mut first = true;
@@ -252,10 +265,10 @@ impl QueryParser {
             let value = self.format_unspecified(value)?;
             output.extend_from_slice(&value);
         }
-        Ok(output)
+        Ok(output.into())
     }
 
-    fn format_fields(&self, arg: &Zval) -> Result<Vec<u8>, String> {
+    fn format_fields(&self, arg: &Zval) -> Result<Cow<[u8]>, String> {
         // check if it is string
         if let Some(s) = arg.zend_str() {
             let s = s.as_bytes();
@@ -263,7 +276,7 @@ impl QueryParser {
             output.extend_from_slice(b"`");
             output.extend_from_slice(s);
             output.extend_from_slice(b"`");
-            return Ok(output)
+            return Ok(output.into())
         }
 
         // check if it is an array
@@ -284,13 +297,13 @@ impl QueryParser {
                 }
             }
             output.extend_from_slice(b"`");
-            return Ok(output)
+            return Ok(output.into())
         }
 
         Err("Argument for ?# should be string or array of strings".to_string())
     }
 
-    fn format_unspecified(&self, arg: &Zval) -> Result<Vec<u8>, String> {
+    fn format_unspecified<'a>(&'_ self, arg: &'a Zval) -> Result<Cow<'a, [u8]>, String> {
         match arg.get_type() {
             DataType::String => {
                 let escaped = self.escape_string(arg)?;
@@ -298,20 +311,20 @@ impl QueryParser {
                 res.extend_from_slice(b"'");
                 res.extend_from_slice(&escaped);
                 res.extend_from_slice(b"'");
-                Ok(res)
+                Ok(res.into())
             }
-            DataType::Null => Ok(b"NULL".to_vec()),
+            DataType::Null => Ok(NULL_STRING.clone()),
             DataType::Long => self.format_integer(arg),
             DataType::Double => self.format_float(arg),
             DataType::Bool => {
                 if arg.bool().unwrap() {
-                    Ok(b"1".to_vec())
+                    Ok(ONE_STRING.clone())
                 } else {
-                    Ok(b"0".to_vec())
+                    Ok(ZERO_STRING.clone())
                 }
             },
-            DataType::True => Ok(b"1".to_vec()),
-            DataType::False => Ok(b"0".to_vec()),
+            DataType::True => Ok(ONE_STRING.clone()),
+            DataType::False => Ok(ZERO_STRING.clone()),
             _ => Err("Unsupported type".to_string()),
         }
     }

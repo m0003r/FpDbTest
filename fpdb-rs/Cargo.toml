@@ -8,6 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 ext-php-rs = "*"
+lazy_static = "1.4.0"
 memchr = "2.7.1"
 
 [profile.release]

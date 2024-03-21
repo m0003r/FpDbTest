@@ -428,6 +428,7 @@ name = "fpdb-rs"
 version = "0.1.0"
 dependencies = [
  "ext-php-rs",
+ "lazy_static",
  "memchr",
 ]
 
