@@ -182,33 +182,33 @@ impl QueryParser {
         Binary::from(output).into_zval(false).map_err(|_| "Failed to convert string to zval".to_string())
     }
 
-    fn format_integer<'a>(&'_ self, arg: &'a Zval) -> Result<Cow<'a, [u8]>, String> {
+    fn format_integer<'a, 'b>(&'_ self, arg: &'a Zval) -> Result<Cow<'b, [u8]>, String> {
         if arg.get_type() == DataType::Null {
             return Ok(NULL_STRING.clone());
         }
 
-        zend_casts::as_long_as_string(arg);
-
-        Ok(arg
+        let mut s = arg.shallow_clone();
+        zend_casts::as_long_as_string(&mut s);
+        Ok(s
             .zend_str()
             .ok_or("Expected string")?
             .as_bytes()
-            .as_ref()
+            .to_owned()
             .into())
     }
 
-    fn format_float<'a>(&'_ self, arg: &'a Zval) -> Result<Cow<'a, [u8]>, String> {
+    fn format_float<'a, 'b>(&'_ self, arg: &'a Zval) -> Result<Cow<'b, [u8]>, String> {
         if arg.get_type() == DataType::Null {
             return Ok(NULL_STRING.clone());
         }
 
-        zend_casts::as_float_as_string(arg);
-
-        Ok(arg
+        let mut s = arg.shallow_clone();
+        zend_casts::as_float_as_string(&mut s);
+        Ok(s
             .zend_str()
             .ok_or("Expected string")?
             .as_bytes()
-            .as_ref()
+            .to_owned()
             .into())
     }
 

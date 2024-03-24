@@ -6,8 +6,8 @@ extern "C" {
     fn _convert_to_string(ht: *mut Zval);
 }
 
-pub fn as_long_as_string(v: &Zval) {
-    let zval_ptr = v as *const Zval as *mut Zval;
+pub fn as_long_as_string(v: &mut Zval) {
+    let zval_ptr = v as *mut Zval;
     // SAFETY: `v` is a valid pointer to a Zval, zend casts are safe
     unsafe {
         convert_to_long(zval_ptr);
@@ -15,8 +15,8 @@ pub fn as_long_as_string(v: &Zval) {
     }
 }
 
-pub fn as_float_as_string(v: &Zval) {
-    let zval_ptr = v as *const Zval as *mut Zval;
+pub fn as_float_as_string(v: &mut Zval) {
+    let zval_ptr = v as *mut Zval;
     // SAFETY: `v` is a valid pointer to a Zval, zend casts are safe
     unsafe {
         convert_to_double(zval_ptr);

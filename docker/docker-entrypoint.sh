@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 cd /app
 
 composer install
@@ -13,6 +15,9 @@ php src/test.php DFA
 echo; echo;
 echo -n "RexExp: ";
 php src/test.php RegExp
+echo; echo;
+echo -n "RustDFA: ";
+php src/test.php RustDFA
 echo; echo;
 
 echo; echo; echo
